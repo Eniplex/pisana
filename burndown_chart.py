@@ -4,9 +4,12 @@ import re
 import matplotlib.pyplot as plt
 import collections
 import numpy as np
+import ConfigParser
 
-ACCESS_TOKEN = "0/a0d2fe012770a998709eb8ece13ebebe"
-SPRINT_ID = 90303141279562
+config = ConfigParser.ConfigParser()
+config.read('pisana.cfg')
+ACCESS_TOKEN = config.get('Asana', 'UserToken')
+SPRINT_ID = config.getint('Asana', 'Sprint')
 
 
 def get_story_points(task):
@@ -31,15 +34,15 @@ def create_burdown_table():
         fullTask = client.tasks.find_by_id(task['id'])
 
         task_completed_at = parser.parse(fullTask['due_on']).date()
-        day = (task_completed_at - project_created_at).days + 1
-
         points = get_story_points(fullTask)
         sum_points += points
 
-        if days.has_key(day) == False:
-            days.update({day: points})
-        else:
-            days[day] += points
+        if fullTask['completed'] == True:
+            day = (task_completed_at - project_created_at).days + 1
+            if days.has_key(day) == False:
+                days.update({day: points})
+            else:
+                days[day] += points
 
     days[0] = 0
     burndown_data = collections.OrderedDict(sorted(days.items()))
