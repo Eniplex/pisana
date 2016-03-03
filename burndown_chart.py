@@ -15,6 +15,10 @@ SPRINT_ID = config.getint('Asana', 'Sprint')
 def get_story_points(task):
     task_name = task['name']
     match = re.match(r"^\[(\d*)\]", task_name)
+
+    if match == None:
+        return 0
+
     return int(match.group(1))
 
 
@@ -33,11 +37,11 @@ def create_burdown_table():
     for task in tasks:
         fullTask = client.tasks.find_by_id(task['id'])
 
-        task_completed_at = parser.parse(fullTask['due_on']).date()
         points = get_story_points(fullTask)
         sum_points += points
 
         if fullTask['completed'] == True:
+            task_completed_at = parser.parse(fullTask['completed_at']).date()
             day = (task_completed_at - project_created_at).days + 1
             if days.has_key(day) == False:
                 days.update({day: points})
@@ -57,7 +61,7 @@ def create_burdown_table():
 
 (predicted_days, sum_points, days) = create_burdown_table()
 plt.xlabel("Days")
-plt.ylabel("Doints")
+plt.ylabel("Points")
 plt.plot(days.keys(), days.values())
 
 plt.plot(range(0, predicted_days), np.linspace(start=sum_points, stop=0, num=predicted_days))
