@@ -16,7 +16,7 @@ def get_story_points(task):
     task_name = task['name']
     match = re.match(r"^\[(\d*)\]", task_name)
 
-    if match == None:
+    if match is None:
         return 0
 
     return int(match.group(1))
@@ -59,13 +59,14 @@ def create_burdown_table():
 
     return (predicted_days, sum_points, burndown_data)
 
-(predicted_days, sum_points, days) = create_burdown_table()
-plt.xlabel("Days")
-plt.ylabel("Points")
-plt.plot(days.keys(), days.values())
+if __name__ == "__main__":
+    (predicted_days, sum_points, days) = create_burdown_table()
+    plt.xlabel("Days")
+    plt.ylabel("Points")
+    plt.plot(days.keys(), days.values())
 
-plt.plot(range(0, predicted_days), np.linspace(start=sum_points, stop=0, num=predicted_days))
-plt.show()
+    plt.plot(range(0, predicted_days), np.linspace(start=sum_points, stop=0, num=predicted_days))
+    plt.show()
 
 
 
