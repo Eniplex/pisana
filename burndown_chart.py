@@ -28,36 +28,43 @@ def create_burdown_table():
 
     # get the project
     project = client.projects.find_by_id(SPRINT_ID)
+
+    # calculate dates
     project_created_at = parser.parse(project['created_at']).replace(tzinfo=None).date()
     project_due_on = parser.parse(project['due_date']).date()
+    predicted_days = (project_due_on - project_created_at).days + 1
 
     days = {}
     sum_points = 0
     tasks = client.tasks.find_all({ 'project': SPRINT_ID }, page_size=100)
     for task in tasks:
-        fullTask = client.tasks.find_by_id(task['id'])
+        full_task = client.tasks.find_by_id(task['id'])
 
-        points = get_story_points(fullTask)
+        points = get_story_points(full_task)
         sum_points += points
 
-        if fullTask['completed'] == True:
-            task_completed_at = parser.parse(fullTask['completed_at']).date()
+        if full_task['completed'] == True:
+            task_completed_at = parser.parse(full_task['completed_at']).date()
+
+            # +1 because task completed during the day is counted as work belong to end of the day
             day = (task_completed_at - project_created_at).days + 1
-            if days.has_key(day) == False:
+            if not days.has_key(day):
                 days.update({day: points})
             else:
                 days[day] += points
 
-    days[0] = 0
     burndown_data = collections.OrderedDict(sorted(days.items()))
-    remaining_points = sum_points
-    for i in range(0, len(burndown_data)):
-        remaining_points -= burndown_data[i]
-        burndown_data[i] = remaining_points
+    burndown_chart = collections.OrderedDict()
+    burndown_chart[0] = sum_points
 
-    predicted_days = (project_due_on - project_created_at).days + 1
+    print('Burndown: ')
+    for i in range(1, predicted_days+1):
+        burned =  burndown_data[i] if burndown_data.has_key(i) else 0
+        burndown_chart[i] = burndown_chart[i-1] - burned
+        print('Day %s: %i (%i)' % (i, burned,  burndown_chart[i]))
 
-    return (predicted_days, sum_points, burndown_data)
+    return predicted_days, sum_points, burndown_chart
+
 
 if __name__ == "__main__":
     (predicted_days, sum_points, days) = create_burdown_table()
@@ -65,7 +72,7 @@ if __name__ == "__main__":
     plt.ylabel("Points")
     plt.plot(days.keys(), days.values())
 
-    plt.plot(range(0, predicted_days), np.linspace(start=sum_points, stop=0, num=predicted_days))
+    plt.plot(range(0, predicted_days+1), np.linspace(start=sum_points, stop=0, num=(predicted_days+1)))
     plt.show()
 
 
