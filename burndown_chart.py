@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import collections
 import numpy as np
 import ConfigParser
+from datetime import date
 
 config = ConfigParser.ConfigParser()
 config.read('pisana.cfg')
@@ -33,6 +34,7 @@ def create_burdown_table():
     project_created_at = parser.parse(project['created_at']).replace(tzinfo=None).date()
     project_due_on = parser.parse(project['due_date']).date()
     predicted_days = (project_due_on - project_created_at).days + 1
+    todays_day = (date.today() - project_created_at).days
 
     days = {}
     sum_points = 0
@@ -63,16 +65,18 @@ def create_burdown_table():
         burndown_chart[i] = burndown_chart[i-1] - burned
         print('Day %s: %i (%i)' % (i, burned,  burndown_chart[i]))
 
-    return predicted_days, sum_points, burndown_chart
+    return todays_day, predicted_days, sum_points, burndown_chart
 
 
 if __name__ == "__main__":
-    (predicted_days, sum_points, days) = create_burdown_table()
+    (todays_day, predicted_days, sum_points, days) = create_burdown_table()
     plt.xlabel("Days")
     plt.ylabel("Points")
-    plt.plot(days.keys(), days.values())
 
+    plt.plot(days.keys(), days.values())
     plt.plot(range(0, predicted_days+1), np.linspace(start=sum_points, stop=0, num=(predicted_days+1)))
+    plt.axvline(todays_day, color='r', linestyle='--')
+
     plt.show()
 
 
